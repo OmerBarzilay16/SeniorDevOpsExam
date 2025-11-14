@@ -1,0 +1,14 @@
+---
+# playbooks/deploy_green.yml
+
+- name: Deploy LogViewer to green environment
+  hosts: green
+  gather_facts: no
+
+  vars:
+    cq_db_list: "[{ 'DbName': '{{ rds_db_name }}', 'DbConnectionString': 'Server={{ rds_endpoint }};Database={{ rds_db_name }};User Id=<from-secret>;Password=<from-secret>;' }]"
+
+  roles:
+    - iis_base
+    - db_migrations
+    - logviewer_app

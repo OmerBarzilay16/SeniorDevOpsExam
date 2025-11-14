@@ -1,0 +1,6 @@
+---
+# roles/db_migrations/tasks/main.yml
+
+- name: Placeholder - build CQ_DB_LIST from AWS Secrets Manager and run migrations
+  ansible.builtin.debug:
+    msg: "Here we would call AWS Secrets Manager to get DB creds, build CQ_DB_LIST, and execute SQL migrations."

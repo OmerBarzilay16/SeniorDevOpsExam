@@ -1,0 +1,2 @@
+ansible_password: "{{ lookup('env', 'ANSIBLE_PASSWORD') }}"
+ansible_winrm_password: "{{ lookup('env', 'ANSIBLE_PASSWORD') }}"

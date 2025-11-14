@@ -1,0 +1,6 @@
+---
+# roles/blue_green_switch/tasks/main.yml
+
+- name: Placeholder - switch ALB listener between blue and green target groups
+  ansible.builtin.debug:
+    msg: "Here we would use AWS modules or awscli to change the ALB listener default target group."

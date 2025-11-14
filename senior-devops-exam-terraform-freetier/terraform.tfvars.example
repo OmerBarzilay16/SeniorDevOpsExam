@@ -1,0 +1,7 @@
+# Copy this file to terraform.tfvars and fill in your values.
+# Note: Staying 100% free depends on your overall AWS usage & free tier status.
+# Always double-check the Billing console and destroy resources when done.
+
+allowed_admin_cidr = "85.64.188.229/32"
+db_username        = "dbadmin"
+db_password        = "SomeStrongPassword123!"

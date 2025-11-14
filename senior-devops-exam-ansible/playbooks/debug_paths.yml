@@ -1,0 +1,20 @@
+---
+- name: Debug LogViewer paths
+  hosts: logviewer
+  gather_facts: no
+
+  tasks:
+    - name: Show C:\LogViewer
+      ansible.windows.win_shell: |
+        echo ==== C:\LogViewer ====
+        dir C:\LogViewer
+        echo.
+        echo ==== C:\LogViewer\LogViewer ====
+        dir C:\LogViewer\LogViewer
+        echo.
+        echo ==== C:\LogViewer\assets ====
+        dir C:\LogViewer\assets
+      register: dir_out
+
+    - debug:
+        var: dir_out.stdout_lines

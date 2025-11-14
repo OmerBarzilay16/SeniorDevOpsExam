@@ -1,0 +1,55 @@
+- name: Ensure deployment root directory exists
+  ansible.windows.win_file:
+    path: "{{ logviewer_root }}"
+    state: directory
+
+- name: Copy LogViewer package to target
+  ansible.windows.win_copy:
+    src: "{{ playbook_dir }}/../LogViewer.zip"
+    dest: "{{ logviewer_root }}\\LogViewer.zip"
+
+- name: Unzip LogViewer package
+  community.windows.win_unzip:
+    src: "{{ logviewer_root }}\\LogViewer.zip"
+    dest: "{{ logviewer_root }}"
+    rm: yes
+
+- name: Ensure IIS App Pool exists
+  community.windows.win_iis_webapppool:
+    name: "{{ logviewer_app_pool }}"
+    state: started
+
+- name: Ensure IIS Site exists
+  community.windows.win_iis_website:
+    name: "{{ logviewer_site_name }}"
+    state: started
+    port: "{{ logviewer_site_port }}"
+    physical_path: "{{ logviewer_site_path }}"
+    application_pool: "{{ logviewer_app_pool }}"
+    ip: "*"
+    hostname: ""
+
+- name: Drop simple health page
+  ansible.windows.win_copy:
+    content: "LogViewer test page`r`n"
+    dest: "{{ logviewer_site_path }}\\health.html"
+
+# Fix the SPA asset base path in index.html using PowerShell
+# Original HTML points to /LogViewer/assets/..., but our ALB serves app at /
+# So we rewrite it to /assets/...
+- name: Fix index.html asset base path
+  ansible.windows.win_powershell:
+    script: |
+      $path = "{{ logviewer_site_path }}\index.html"
+      if (Test-Path $path) {
+        $content = Get-Content -Raw -Path $path
+        $new = $content -replace "/LogViewer/assets/", "/assets/"
+        if ($new -ne $content) {
+          $new | Set-Content -Path $path -Encoding UTF8
+          Write-Output "Rewrote /LogViewer/assets/ -> /assets/ in index.html"
+        } else {
+          Write-Output "No changes needed in index.html"
+        }
+      } else {
+        Write-Error "index.html not found at $path"
+        }

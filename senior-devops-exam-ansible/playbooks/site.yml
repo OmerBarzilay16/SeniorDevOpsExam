@@ -1,0 +1,8 @@
+- name: Configure IIS and deploy LogViewer
+  hosts: logviewer
+  gather_facts: no
+
+  roles:
+    - iis_base
+    - db_migrations
+    - logviewer_app

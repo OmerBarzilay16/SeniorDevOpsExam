@@ -1,0 +1,27 @@
+- name: Ensure IIS Web-Server role is installed
+  ansible.windows.win_feature:
+    name:
+      - Web-Server
+    state: present
+    include_sub_features: yes
+    restart: no
+
+- name: Ensure .NET Framework 4.8 Features are installed (if required)
+  ansible.windows.win_feature:
+    name:
+      - NET-Framework-45-Core
+      - NET-Framework-45-ASPNET
+    state: present
+    include_sub_features: yes
+    restart: no
+
+- name: Ensure IIS service is started and set to auto
+  ansible.windows.win_service:
+    name: W3SVC
+    start_mode: auto
+    state: started
+
+- name: Remove Default Web Site (free up port 80)
+  community.windows.win_iis_website:
+    name: 'Default Web Site'
+    state: absent

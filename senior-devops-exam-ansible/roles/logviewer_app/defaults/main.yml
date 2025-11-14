@@ -1,0 +1,15 @@
+# Default variables for LogViewer IIS deployment
+
+# Base directory on disk where we deploy the package
+logviewer_root: 'C:\LogViewer'
+
+# IIS App Pool
+logviewer_app_pool: 'LogViewerAppPool'
+
+# IIS Website
+logviewer_site_name: 'LogViewerSite'
+logviewer_site_port: 80
+
+# Physical path for the IIS site (where index.html actually lives)
+# After unzip: C:\LogViewer\LogViewer\index.html and C:\LogViewer\LogViewer\assets
+logviewer_site_path: 'C:\LogViewer\LogViewer'
