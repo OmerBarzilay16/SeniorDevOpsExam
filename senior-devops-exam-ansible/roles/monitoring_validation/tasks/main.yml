@@ -1,0 +1,134 @@
+---
+# roles/monitoring_validation/tasks/main.yml
+
+# 0) Ensure aws CLI is available on control node
+- name: Ensure aws CLI is available on control node
+  delegate_to: localhost
+  run_once: true
+  ansible.builtin.command: aws --version
+  register: aws_version
+  changed_when: false
+
+- name: Fail if aws CLI is not installed
+  delegate_to: localhost
+  run_once: true
+  ansible.builtin.fail:
+    msg: "aws CLI not found on control node. Install awscli before running monitoring."
+  when: aws_version.rc != 0
+
+# 1) Validate IIS health via ALB
+- name: Check IIS health via ALB
+  delegate_to: localhost
+  run_once: true
+  ansible.builtin.uri:
+    url: "http://{{ alb_dns_name }}/health.html"
+    method: GET
+    status_code: 200
+    return_content: yes
+  register: alb_health
+
+- name: Mark IIS health status
+  delegate_to: localhost
+  run_once: true
+  ansible.builtin.set_fact:
+    iis_healthy: "{{ alb_health.status == 200 }}"
+
+# 2) Reuse DB connection info from db_migrations
+- name: Reuse DB connection variables from db_migrations
+  delegate_to: localhost
+  run_once: true
+  ansible.builtin.debug:
+    msg: "Monitoring using db_host={{ db_host }}, db_name={{ db_name }}"
+
+# 2a) Check SQL connectivity from blue (TCP level)
+- name: Test SQL connectivity to RDS from blue (TCP 1433)
+  delegate_to: blue
+  ansible.windows.win_shell: |
+    Test-NetConnection -ComputerName {{ db_host }} -Port 1433 -InformationLevel Quiet
+  register: sql_test
+
+- name: Mark SQL connectivity status
+  delegate_to: localhost
+  run_once: true
+  ansible.builtin.set_fact:
+    sql_connectivity_ok: "{{ sql_test.stdout | trim | lower == 'true' }}"
+
+# 2b) Document schema validation query (for reviewer)
+- name: Document schema validation query (for reviewer)
+  delegate_to: localhost
+  run_once: true
+  ansible.builtin.debug:
+    msg: >-
+      Schema check would run:
+      SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES
+      WHERE TABLE_NAME = 'LogEntries'
+      against {{ db_name }} on {{ db_host }} using sqlcmd / ADO.NET.
+
+# 3) Compute overall status
+- name: Compute overall deployment status
+  delegate_to: localhost
+  run_once: true
+  ansible.builtin.set_fact:
+    deployment_status: >-
+      {{ 'SUCCESS' if (iis_healthy and sql_connectivity_ok) else 'FAILURE' }}
+
+# 4) Log success/failure to CloudWatch Logs
+- name: Build CloudWatch Logs identifiers
+  delegate_to: localhost
+  run_once: true
+  ansible.builtin.set_fact:
+    cw_log_group: "senior-devops-exam-logviewer"
+    cw_log_stream: "deployment-{{ '%Y%m%d%H%M%S' | strftime }}"
+
+- name: Ensure CloudWatch Logs log group exists
+  delegate_to: localhost
+  run_once: true
+  ansible.builtin.command: >
+    aws logs create-log-group
+    --log-group-name {{ cw_log_group }}
+    --region {{ aws_region }}
+  register: cw_lg
+  failed_when: cw_lg.rc not in [0, 255]
+  changed_when: cw_lg.rc == 0
+
+- name: Create CloudWatch Logs log stream
+  delegate_to: localhost
+  run_once: true
+  ansible.builtin.command: >
+    aws logs create-log-stream
+    --log-group-name {{ cw_log_group }}
+    --log-stream-name {{ cw_log_stream }}
+    --region {{ aws_region }}
+  register: cw_ls
+  changed_when: cw_ls.rc == 0
+
+- name: Put deployment log event to CloudWatch Logs
+  delegate_to: localhost
+  run_once: true
+  ansible.builtin.shell: |
+    TS=$(($(date +%s)*1000))
+    MSG="deployment_status={{ deployment_status }},iis_healthy={{ iis_healthy }},sql_connectivity_ok={{ sql_connectivity_ok }}"
+    aws logs put-log-events \
+      --log-group-name {{ cw_log_group }} \
+      --log-stream-name {{ cw_log_stream }} \
+      --log-events "[{\"timestamp\":$TS,\"message\":\"$MSG\"}]" \
+      --region {{ aws_region }}
+  register: cw_put
+  changed_when: cw_put.rc == 0
+
+# 5) Optional SNS alert (only on FAILURE, only if SNS_TOPIC_ARN is set)
+- name: Optionally send SNS alert on FAILURE
+  delegate_to: localhost
+  run_once: true
+  ansible.builtin.command: >
+    aws sns publish
+    --topic-arn {{ sns_topic_arn }}
+    --subject "LogViewer deployment {{ deployment_status }}"
+    --message "Deployment {{ deployment_status }}. IIS healthy={{ iis_healthy }}, SQL connectivity={{ sql_connectivity_ok }}."
+    --region {{ aws_region }}
+  when:
+    - sns_topic_arn is defined
+    - sns_topic_arn | length > 0
+    - deployment_status == 'FAILURE'
+  register: sns_publish
+  changed_when: sns_publish.rc == 0

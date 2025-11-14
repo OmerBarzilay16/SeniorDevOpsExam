@@ -6,3 +6,5 @@
     - iis_base
     - db_migrations
     - logviewer_app
+    - blue_green_switch
+    - monitoring_validation

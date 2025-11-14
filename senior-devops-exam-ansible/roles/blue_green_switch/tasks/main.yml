@@ -1,6 +1,56 @@
 ---
 # roles/blue_green_switch/tasks/main.yml
 
-- name: Placeholder - switch ALB listener between blue and green target groups
-  ansible.builtin.debug:
-    msg: "Here we would use AWS modules or awscli to change the ALB listener default target group."
+# 1) Validate the deployment via ALB /health
+
+- name: Check health endpoint via ALB
+  delegate_to: localhost
+  run_once: true
+  ansible.builtin.uri:
+    url: "http://{{ alb_dns_name }}/health.html"
+    method: GET
+    status_code: 200
+    return_content: yes
+  register: health_check_alb
+
+
+- name: Fail if ALB health check failed
+  delegate_to: localhost
+  run_once: true
+  ansible.builtin.fail:
+    msg: "ALB /health check failed: {{ health_check_alb }}"
+  when: health_check_alb.status | default(-1) != 200
+
+# 2) Switch ALB traffic from blue to green
+
+- name: Switch ALB default action to green target group
+  delegate_to: localhost
+  run_once: true
+  ansible.builtin.command: >
+    aws elbv2 modify-listener
+    --listener-arn {{ alb_listener_arn }}
+    --region {{ aws_region }}
+    --default-actions Type=forward,TargetGroupArn={{ tg_green_arn }}
+  register: alb_switch_result
+  changed_when: alb_switch_result.rc == 0
+
+- name: Fail if ALB switch failed
+  delegate_to: localhost
+  run_once: true
+  ansible.builtin.fail:
+    msg: "ALB switch to green target group failed: {{ alb_switch_result.stderr }}"
+  when: alb_switch_result.rc != 0
+
+# 3) Log deployment status
+
+- name: Append deployment log entry
+  delegate_to: localhost
+  run_once: true
+  ansible.builtin.lineinfile:
+    path: "/tmp/logviewer_deployments.log"
+    create: yes
+    insertafter: EOF
+    line: >
+      {{ '%Y-%m-%d %H:%M:%S' | strftime }} -
+      deployment OK - ALB switched to green TG {{ tg_green_arn }}
+      - alb_health_status={{ health_check_alb.status | default(-1) }}

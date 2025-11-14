@@ -1,2 +1,8 @@
 ansible_password: "{{ lookup('env', 'ANSIBLE_PASSWORD') }}"
 ansible_winrm_password: "{{ lookup('env', 'ANSIBLE_PASSWORD') }}"
+aws_region: us-east-2           # matches your Terraform region
+rds_secret_arn: "{{ lookup('env', 'RDS_SECRET_ARN') }}"
+
+
+# Optional SNS
+sns_topic_arn: "{{ lookup('env', 'SNS_TOPIC_ARN') | default('', true) }}"
