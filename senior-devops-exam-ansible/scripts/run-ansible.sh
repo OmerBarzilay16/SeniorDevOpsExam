@@ -22,4 +22,5 @@ echo "Fetched password length: ${#SECRET_VALUE}"
 ANSIBLE_ROLES_PATH=./roles \
 ansible-playbook -i inventory/hosts.yml "$PLAYBOOK" \
   -e "ansible_password=${SECRET_VALUE}" \
-  -e "ansible_winrm_password=${SECRET_VALUE}"
+  -e "ansible_winrm_password=${SECRET_VALUE}" \
+  --vault-id @prompt

@@ -2,6 +2,8 @@
   hosts: logviewer
   gather_facts: no
 
+  vars_files:
+    - ../group_vars/logviewer.vault.yml
   roles:
     - iis_base
     - db_migrations

@@ -33,14 +33,25 @@
   ansible.builtin.set_fact:
     db_secret: "{{ db_secret_raw.stdout | from_json }}"
 
-- name: Set DB connection variables from secret
+- name: Set DB connection variables from secret or vault fallback
   delegate_to: localhost
   run_once: true
   ansible.builtin.set_fact:
-    db_host: "{{ db_secret.url }}"
-    db_name: "{{ db_secret.name | default('LogViewerDb') }}"
-    db_user: "{{ db_secret.username }}"
-    db_password: "{{ db_secret.password }}"
+    db_host: >-
+      {{ db_secret.host
+         | default(db_secret.address, true)
+         | default(fallback_db_host, true) }}
+    db_name: >-
+      {{ db_secret.dbname
+         | default(db_secret.db_name, true)
+         | default(fallback_db_name, true) }}
+    db_user: >-
+      {{ db_secret.username
+         | default(fallback_db_username, true) }}
+    db_password: >-
+      {{ db_secret.password
+         | default(fallback_db_password, true) }}
+
 
 
 # Example: run MySQL migrations from control node using mysql client.
