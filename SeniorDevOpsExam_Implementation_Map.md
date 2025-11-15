@@ -91,7 +91,6 @@ This file provides a concise summary of **where each requirement in the exam is 
 | Rollback on failure | ✔️ | roles/monitoring_validation/tasks/main.yml |
 | AWS SSM Session Manager | ✔️ | iam.tf (instance profile) |
 | IAM roles (no hardcoded creds) | ✔️ | iam.tf + Terraform outputs |
-| Autoscaling group | ❌ Not required / not implemented |
 
 ---
 
