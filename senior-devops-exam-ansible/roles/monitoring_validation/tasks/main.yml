@@ -1,7 +1,4 @@
 ---
-# roles/monitoring_validation/tasks/main.yml
-
-# 0) Ensure aws CLI is available on control node
 - name: Ensure aws CLI is available on control node
   delegate_to: localhost
   run_once: true
@@ -16,7 +13,6 @@
     msg: "aws CLI not found on control node. Install awscli before running monitoring."
   when: aws_version.rc != 0
 
-# 1) Validate IIS health via ALB
 - name: Check IIS health via ALB
   delegate_to: localhost
   run_once: true
@@ -33,14 +29,12 @@
   ansible.builtin.set_fact:
     iis_healthy: "{{ alb_health.status == 200 }}"
 
-# 2) Reuse DB connection info from db_migrations
 - name: Reuse DB connection variables from db_migrations
   delegate_to: localhost
   run_once: true
   ansible.builtin.debug:
     msg: "Monitoring using db_host={{ db_host }}, db_name={{ db_name }}"
 
-# 2a) Check SQL connectivity from blue (TCP level)
 - name: Test SQL connectivity to RDS from blue (TCP 1433)
   delegate_to: blue
   ansible.windows.win_shell: |
@@ -53,7 +47,6 @@
   ansible.builtin.set_fact:
     sql_connectivity_ok: "{{ sql_test.stdout | trim | lower == 'true' }}"
 
-# 2b) Document schema validation query (for reviewer)
 - name: Document schema validation query (for reviewer)
   delegate_to: localhost
   run_once: true
@@ -64,7 +57,6 @@
       WHERE TABLE_NAME = 'LogEntries'
       against {{ db_name }} on {{ db_host }} using sqlcmd / ADO.NET.
 
-# 3) Compute overall status
 - name: Compute overall deployment status
   delegate_to: localhost
   run_once: true
@@ -72,7 +64,6 @@
     deployment_status: >-
       {{ 'SUCCESS' if (iis_healthy and sql_connectivity_ok) else 'FAILURE' }}
 
-# 4) Log success/failure to CloudWatch Logs
 - name: Build CloudWatch Logs identifiers
   delegate_to: localhost
   run_once: true
@@ -116,7 +107,6 @@
   register: cw_put
   changed_when: cw_put.rc == 0
 
-# --- ROLLBACK LOGIC: only if deployment FAILED ---
 
 - name: Roll back ALB to blue if deployment FAILED
   delegate_to: localhost

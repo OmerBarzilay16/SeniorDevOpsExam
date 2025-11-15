@@ -53,10 +53,6 @@
          | default(fallback_db_password, true) }}
 
 
-
-# Example: run MySQL migrations from control node using mysql client.
-# Adjust this to match your actual RDS engine + client (psql, sqlcmd, etc.)
-
 - name: Upload migration script to control node temp (if using template/copy)
   delegate_to: localhost
   run_once: true
@@ -64,10 +60,6 @@
     src: "files/migrations/001_init.sql"
     dest: "/tmp/logviewer_001_init.sql"
   when: migrations_enabled | default(true)
-
-# We are on the Ansible control node here.
-# For a real environment you would install the proper SQL Server client (sqlcmd)
-# and uncomment the sqlcmd line below.
 
 - name: Show DB migration command that would run against RDS
   delegate_to: localhost

@@ -1,5 +1,4 @@
 ---
-# playbooks/deploy_blue.yml
 
 - name: Deploy LogViewer to blue environment
   hosts: blue

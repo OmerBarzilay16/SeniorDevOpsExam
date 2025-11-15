@@ -1,5 +1,4 @@
 ---
-# playbooks/deploy_green.yml
 
 - name: Deploy LogViewer to green environment
   hosts: green

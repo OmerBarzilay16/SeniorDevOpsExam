@@ -1,16 +1,12 @@
 #!/usr/bin/env bash
-# NOTE: This script is meant to be *sourced* so that env vars persist:
-#   cd senior-devops-exam-ansible
-#   source scripts/setup-env-and-inventory.sh
 
-# Prevent direct execution
 if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
   echo "ERROR: This script must be sourced so env vars persist:"
   echo "  source scripts/setup-env-and-inventory.sh"
   exit 1
 fi
 
-# Resolve paths
+
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 ANSIBLE_DIR="$( cd "$SCRIPT_DIR/.." && pwd )"
 ROOT_DIR="$( cd "$ANSIBLE_DIR/.." && pwd )"
@@ -22,13 +18,13 @@ echo "=== SeniorDevOpsExam setup: env + inventory ==="
 echo "--- Using Terraform dir: ${TF_DIR}"
 echo "--- Using AWS region   : ${AWS_REGION}"
 
-# Go to Terraform dir to read outputs
+
 if ! cd "$TF_DIR"; then
   echo "ERROR: Cannot cd to ${TF_DIR}"
   return 1 2>/dev/null || exit 1
 fi
 
-# Export env vars from Terraform outputs
+
 export AWS_REGION
 export RDS_SECRET_ARN="$(terraform output -raw db_secret_arn)"
 export ALB_LISTENER_ARN="$(terraform output -raw alb_listener_arn)"
@@ -45,7 +41,7 @@ echo "    TG_GREEN_ARN=${TG_GREEN_ARN}"
 echo "    TG_BLUE_ARN=${TG_BLUE_ARN}"
 echo "    ALB_DNS_NAME=${ALB_DNS_NAME}"
 
-# Discover current blue/green public IPs
+
 echo "--- Discovering EC2 public IPs for blue/green ---"
 BLUE_ID="$(terraform output -raw blue_instance_id)"
 GREEN_ID="$(terraform output -raw green_instance_id)"
@@ -65,7 +61,7 @@ GREEN_IP="$(aws ec2 describe-instances \
 echo "    blue  -> ${BLUE_IP}"
 echo "    green -> ${GREEN_IP}"
 
-# Go back to ansible dir *before* touching inventory
+
 cd "$ANSIBLE_DIR" || {
   echo "ERROR: Cannot cd back to ${ANSIBLE_DIR}"
   return 1 2>/dev/null || exit 1
