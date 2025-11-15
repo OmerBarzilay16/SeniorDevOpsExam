@@ -14,6 +14,7 @@
   register: health_check_alb
 
 
+
 - name: Fail if ALB health check failed
   delegate_to: localhost
   run_once: true

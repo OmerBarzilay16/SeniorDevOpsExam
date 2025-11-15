@@ -53,3 +53,13 @@
       } else {
         Write-Error "index.html not found at $path"
         }
+
+- name: Ensure appConfig.json exists for LogViewer
+  ansible.windows.win_copy:
+    dest: "{{ logviewer_site_path }}\\appConfig.json"
+    content: |
+      {
+        "apiUrl": "https://{{ alb_dns_name }}/CytegicLoggerAPI/api",
+        "version": "{{ logviewer_app_version }}"
+      }
+

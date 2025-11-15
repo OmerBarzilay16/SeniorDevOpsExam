@@ -6,6 +6,29 @@
     include_sub_features: yes
     restart: no
 
+- name: Ensure temp directory for installers exists
+  ansible.windows.win_file:
+    path: C:\Temp
+    state: directory
+
+- name: Download .NET Hosting Bundle 8.0.16
+  ansible.windows.win_get_url:
+    url: "{{ dotnet_hosting_bundle_url }}"
+    dest: C:\Temp\dotnet-hosting-8.0.16-win.exe
+  register: dotnet_hosting_download
+  failed_when: false
+
+- name: Install .NET Hosting Bundle 8.0.16
+  ansible.windows.win_command: >
+    C:\Temp\dotnet-hosting-8.0.16-win.exe /quiet /norestart
+  args:
+    creates: 'C:\Program Files\dotnet\host'
+  when:
+    - dotnet_hosting_download is defined
+    - dotnet_hosting_download.status_code is defined
+    - dotnet_hosting_download.status_code == 200
+
+
 - name: Ensure .NET Framework 4.8 Features are installed (if required)
   ansible.windows.win_feature:
     name:

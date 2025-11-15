@@ -13,3 +13,4 @@ logviewer_site_port: 80
 # Physical path for the IIS site (where index.html actually lives)
 # After unzip: C:\LogViewer\LogViewer\index.html and C:\LogViewer\LogViewer\assets
 logviewer_site_path: 'C:\LogViewer\LogViewer'
+logviewer_app_version: "1.0.0.1"

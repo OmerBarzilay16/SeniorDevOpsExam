@@ -1,0 +1,4 @@
+---
+# Default URL for .NET Hosting Bundle 8.0.16
+# If DOTNET_HOSTING_URL env is set, it will override this.
+dotnet_hosting_bundle_url: "{{ lookup('env', 'DOTNET_HOSTING_URL') | default('https://example.com/dotnet-hosting-8.0.16-win.exe', true) }}"
