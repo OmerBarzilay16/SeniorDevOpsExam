@@ -6,3 +6,6 @@ rds_secret_arn: "{{ lookup('env', 'RDS_SECRET_ARN') }}"
 
 # Optional SNS
 sns_topic_arn: "{{ lookup('env', 'SNS_TOPIC_ARN') | default('', true) }}"
+
+tg_green_arn: "{{ lookup('env', 'TG_GREEN_ARN') }}"
+tg_blue_arn: "{{ lookup('env', 'TG_BLUE_ARN') | default('', true) }}"

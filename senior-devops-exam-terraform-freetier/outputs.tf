@@ -42,3 +42,19 @@ output "db_secret_arn" {
   description = "ARN of the Secrets Manager secret storing DB credentials"
   value       = aws_secretsmanager_secret.db_credentials.arn
 }
+
+output "alb_listener_arn" {
+  description = "HTTP listener ARN for the ALB"
+  value       = aws_lb_listener.http.arn
+}
+
+output "tg_green_arn" {
+  description = "Green target group ARN"
+  value       = aws_lb_target_group.green.arn
+}
+
+
+output "tg_blue_arn" {
+  description = "ARN of the blue target group"
+  value       = aws_lb_target_group.blue.arn
+}

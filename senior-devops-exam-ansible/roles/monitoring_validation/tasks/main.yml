@@ -116,6 +116,43 @@
   register: cw_put
   changed_when: cw_put.rc == 0
 
+# --- ROLLBACK LOGIC: only if deployment FAILED ---
+
+- name: Roll back ALB to blue if deployment FAILED
+  delegate_to: localhost
+  run_once: true
+  when:
+    - deployment_overall_status is defined
+    - deployment_overall_status != 'SUCCESS'
+    - tg_blue_arn is defined
+    - tg_blue_arn | length > 0
+  ansible.builtin.command: >
+    aws elbv2 modify-listener
+    --listener-arn {{ alb_listener_arn }}
+    --region {{ aws_region }}
+    --default-actions Type=forward,TargetGroupArn={{ tg_blue_arn }}
+  register: rollback_cmd
+  changed_when: rollback_cmd.rc == 0
+
+- name: Append rollback entry to deployment log
+  delegate_to: localhost
+  run_once: true
+  when:
+    - deployment_overall_status is defined
+    - deployment_overall_status != 'SUCCESS'
+    - tg_blue_arn is defined
+    - tg_blue_arn | length > 0
+  ansible.builtin.lineinfile:
+    path: "/tmp/logviewer_deployments.log"
+    create: yes
+    insertafter: EOF
+    line: >
+      {{ '%Y-%m-%d %H:%M:%S' | strftime }}
+      - ROLLBACK triggered - deployment status={{ deployment_overall_status }}
+      - ALB reverted to blue TG {{ tg_blue_arn }}
+      - rollback_rc={{ rollback_cmd.rc }}
+
+
 # 5) Optional SNS alert (only on FAILURE, only if SNS_TOPIC_ARN is set)
 - name: Optionally send SNS alert on FAILURE
   delegate_to: localhost
